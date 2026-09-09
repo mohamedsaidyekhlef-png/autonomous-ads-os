@@ -1,0 +1,456 @@
+@import "tailwindcss";
+
+:root {
+  --brand-blue: #1468f3;
+  --brand-blue-dark: #1468f3;
+  --brand-orange: #ff6500;
+  --brand-orange-dark: #e85b00;
+  --brand-cyan: #1468f3;
+  --brand-ink: #20242c;
+  --background: #f5f8ff;
+  --foreground: #20242c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      rgb(19 199 231 / 7%),
+      transparent 25rem
+    ),
+    var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgb(20 104 243 / 20%);
+  color: var(--brand-ink);
+}
+
+:focus-visible {
+  outline: 3px solid rgb(255 101 0 / 35%);
+  outline-offset: 2px;
+}
+
+/* BRAND-SKIN-START */
+:root {
+  --brand-blue: #1468f3;
+  --brand-orange: #ff6500;
+  --brand-white: #ffffff;
+  --brand-surface: #f7f8fa;
+  --brand-border: #e5e7eb;
+  --brand-text: #20242c;
+  --brand-muted: #667085;
+}
+
+html {
+  background: var(--brand-surface);
+}
+
+body {
+  background:
+    radial-gradient(
+      circle at 12% 2%,
+      rgb(20 104 243 / 8%),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 92% 94%,
+      rgb(255 101 0 / 6%),
+      transparent 25rem
+    ),
+    var(--brand-surface);
+  color: var(--brand-text);
+}
+
+/* Make the logo visibly larger inside the sidebar/header. */
+aside img[src="/brand-logo.png"],
+header img[src="/brand-logo.png"] {
+  width: 64px !important;
+  height: 64px !important;
+  max-width: none;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgb(20 104 243 / 22%));
+}
+
+/* Exact brand focus color. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(20 104 243 / 24%);
+  outline-offset: 2px;
+}
+
+/* Refresh animation overlay. */
+.brand-launch {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at center,
+      rgb(20 104 243 / 9%) 0,
+      transparent 42%
+    ),
+    #ffffff;
+  animation: brand-overlay-exit 2.25s cubic-bezier(.7, 0, .2, 1) forwards;
+}
+
+.brand-launch-stage {
+  position: relative;
+  display: grid;
+  width: min(86vw, 520px);
+  height: min(86vw, 520px);
+  place-items: center;
+}
+
+.brand-launch-logo {
+  position: relative;
+  z-index: 4;
+  width: clamp(220px, 34vw, 390px) !important;
+  height: clamp(220px, 34vw, 390px) !important;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 30px 38px rgb(20 104 243 / 25%))
+    drop-shadow(0 12px 16px rgb(255 101 0 / 12%));
+  animation: brand-logo-launch 2.15s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.brand-launch-glow {
+  position: absolute;
+  z-index: 1;
+  width: 54%;
+  height: 54%;
+  border-radius: 999px;
+  background: rgb(20 104 243 / 18%);
+  filter: blur(48px);
+  animation: brand-glow 1.7s ease-out forwards;
+}
+
+.brand-orbit {
+  position: absolute;
+  z-index: 2;
+  border-radius: 999px;
+  opacity: 0;
+}
+
+.brand-orbit-blue {
+  width: 84%;
+  height: 84%;
+  border: 3px solid rgb(20 104 243 / 27%);
+  border-right-color: transparent;
+  animation:
+    brand-orbit-in 1.5s ease-out forwards,
+    brand-orbit-spin 2.4s linear infinite;
+}
+
+.brand-orbit-orange {
+  width: 68%;
+  height: 68%;
+  border: 3px solid rgb(255 101 0 / 34%);
+  border-top-color: transparent;
+  animation:
+    brand-orbit-in 1.45s .08s ease-out forwards,
+    brand-orbit-spin-reverse 1.9s linear infinite;
+}
+
+.brand-launch-name {
+  position: absolute;
+  bottom: 2%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(18px, 3vw, 26px);
+  letter-spacing: -.04em;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: brand-name-in .65s .55s ease-out forwards;
+}
+
+.brand-launch-name span {
+  color: var(--brand-blue);
+  font-weight: 650;
+}
+
+.brand-launch-name strong {
+  color: var(--brand-orange);
+  font-weight: 850;
+}
+
+.brand-launch-progress {
+  position: absolute;
+  bottom: -8%;
+  width: min(240px, 55%);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9edf3;
+  opacity: 0;
+  animation: brand-progress-visible 1.3s .35s ease forwards;
+}
+
+.brand-launch-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--brand-blue) 0 68%,
+    var(--brand-orange) 68% 100%
+  );
+  transform: translateX(-100%);
+  animation: brand-progress 1.2s .42s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+@keyframes brand-logo-launch {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(.48) rotate(-7deg);
+  }
+
+  38% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06) rotate(1.5deg);
+  }
+
+  58% {
+    transform: scale(1) rotate(0);
+  }
+
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(.84);
+  }
+}
+
+@keyframes brand-overlay-exit {
+  0%,
+  76% {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@keyframes brand-orbit-in {
+  from {
+    opacity: 0;
+    transform: scale(.55);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes brand-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes brand-orbit-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes brand-glow {
+  0% {
+    opacity: 0;
+    transform: scale(.5);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes brand-name-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes brand-progress-visible {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes brand-progress {
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-launch {
+    display: none;
+  }
+
+  .brand-launch-logo,
+  .brand-orbit,
+  .brand-launch-glow,
+  .brand-launch-name,
+  .brand-launch-progress,
+  .brand-launch-progress span {
+    animation: none !important;
+  }
+}
+/* BRAND-SKIN-END */
+
+/* Product shell: exact logo palette, with no dark-navy surfaces. */
+aside {
+  background-color: #1468f3 !important;
+}
+
+aside a,
+aside button {
+  color: #ffffff;
+}
+
+aside img[src="/brand-logo.png"] {
+  width: 72px !important;
+  height: 72px !important;
+  object-fit: contain;
+}
+
+::selection {
+  background: #ff6500;
+  color: #ffffff;
+}
+
+/* PROFESSIONAL-SIDEBAR-START */
+aside {
+  background: #ffffff !important;
+  border-right: 1px solid #e6ebf2 !important;
+  box-shadow: 8px 0 30px rgb(20 104 243 / 5%) !important;
+}
+
+aside nav {
+  padding-inline: 10px;
+}
+
+aside nav a,
+aside nav button {
+  min-height: 46px !important;
+  margin-block: 3px;
+  border-radius: 12px !important;
+  color: #344054 !important;
+  font-size: 14px !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+}
+
+aside nav a:hover,
+aside nav button:hover {
+  background: rgb(20 104 243 / 7%) !important;
+  color: #1468f3 !important;
+}
+
+aside nav a svg,
+aside nav button svg {
+  width: 19px !important;
+  height: 19px !important;
+  color: #1468f3 !important;
+  opacity: 1 !important;
+  stroke-width: 2.2;
+}
+
+aside nav a[class*="bg-gradient"],
+aside nav a[class*="bg-[#1468F3]"],
+aside nav button[class*="bg-gradient"],
+aside nav button[class*="bg-[#1468F3]"] {
+  background: rgb(20 104 243 / 11%) !important;
+  color: #1468f3 !important;
+  box-shadow: inset 3px 0 0 #1468f3 !important;
+}
+
+aside p,
+aside span {
+  color: #475467;
+}
+
+aside img[src="/brand-logo.png"] {
+  width: 62px !important;
+  height: 62px !important;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgb(20 104 243 / 16%));
+}
+
+/* Keep alerts and primary actions orange. */
+aside [class*="bg-red"],
+aside [class*="bg-rose"] {
+  background: #ff6500 !important;
+  color: #ffffff !important;
+}
+
+/* Softer application canvas. */
+body {
+  background:
+    radial-gradient(
+      circle at 15% 0%,
+      rgb(20 104 243 / 4%),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 90% 95%,
+      rgb(255 101 0 / 3%),
+      transparent 26rem
+    ),
+    #f8fafc !important;
+}
+/* PROFESSIONAL-SIDEBAR-END */
