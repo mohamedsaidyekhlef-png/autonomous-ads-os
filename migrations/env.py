@@ -1,10 +1,11 @@
-﻿from logging.config import fileConfig
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import create_engine, pool
 
 from app.core.settings import get_settings
 from app.database.base import Base
+import app.database.models.operations  # noqa: F401
 
 # Import all model modules so Alembic discovers their tables.
 import app.database.models  # noqa: F401
