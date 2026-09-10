@@ -92,26 +92,41 @@ def readiness() -> JSONResponse:
             "error": type(exc).__name__,
         }
 
-    try:
-        response = httpx.get(
-            f"{settings.ollama_base_url.rstrip('/')}/api/tags",
-            timeout=5,
+    if settings.llm_provider.lower() == "ollama":
+        try:
+            response = httpx.get(
+                f"{settings.ollama_base_url.rstrip('/')}/api/tags",
+                timeout=5,
+            )
+            response.raise_for_status()
+            available_models = [
+                model.get("name") for model in response.json().get("models", [])
+            ]
+            model_available = settings.ollama_model in available_models
+            checks["llm"] = {
+                "status": "healthy" if model_available else "unhealthy",
+                "provider": "ollama",
+                "selected_model": settings.ollama_model,
+                "model_available": model_available,
+            }
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            checks["llm"] = {
+                "status": "unhealthy",
+                "provider": "ollama",
+                "error": type(exc).__name__,
+            }
+    else:
+        hosted_ready = all(
+            [
+                settings.llm_base_url,
+                settings.llm_api_key,
+                settings.llm_model,
+            ]
         )
-        response.raise_for_status()
-
-        available_models = [
-            model.get("name") for model in response.json().get("models", [])
-        ]
-
-        checks["ollama"] = {
-            "status": "healthy",
-            "selected_model": settings.ollama_model,
-            "model_available": settings.ollama_model in available_models,
-        }
-    except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
-        checks["ollama"] = {
-            "status": "unhealthy",
-            "error": type(exc).__name__,
+        checks["llm"] = {
+            "status": "healthy" if hosted_ready else "unhealthy",
+            "provider": settings.llm_provider,
+            "configured": hosted_ready,
         }
 
     is_ready = all(check["status"] == "healthy" for check in checks.values())

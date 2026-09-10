@@ -20,7 +20,7 @@ import { SiGoogleads, SiMeta, SiTiktok } from "react-icons/si";
 import { AgentCommandCenter } from "@/components/agent-command-center";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+  process.env.NODE_ENV === "production" ? "/api" : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 type StartResult = {
   status?: string;

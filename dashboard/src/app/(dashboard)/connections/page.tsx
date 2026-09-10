@@ -448,7 +448,7 @@ export default function ConnectionsPage() {
               ))}
             </div>
 
-            <a href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/oauth/google/start`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] px-5 py-3.5 font-bold text-white transition hover:bg-[#E85B00]">
+            <a href={`${process.env.NODE_ENV === "production" ? "/api" : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/oauth/google/start`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] px-5 py-3.5 font-bold text-white transition hover:bg-[#E85B00]">
               Continue to {selected.name}
               <ExternalLink size={17} />
             </a>

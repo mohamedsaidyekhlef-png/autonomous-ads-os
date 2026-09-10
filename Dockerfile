@@ -8,4 +8,4 @@ COPY app ./app
 COPY src ./src
 COPY alembic.ini ./
 COPY migrations ./migrations
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

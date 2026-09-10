@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, Database, LoaderCircle } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = process.env.NODE_ENV === "production" ? "/api" : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const titles: Record<string, string> = { campaigns: "Campaign drafts", decisions: "Decision journal", experiments: "Experiment laboratory", creative: "Creative lab", reports: "Executive reports", settings: "Workspace settings" };
 
 export function OrganizationData({ resource }: { resource: keyof typeof titles }) {

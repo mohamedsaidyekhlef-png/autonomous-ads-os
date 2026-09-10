@@ -3,5 +3,6 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
+preDeployCommand = "uv run alembic upgrade head"
 healthcheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
