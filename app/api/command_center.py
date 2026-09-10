@@ -18,7 +18,7 @@ from app.database.models import (
 )
 from app.database.session import SessionLocal
 from app.llm.client import structured_completion
-from app.workflows.queue import enqueue_run
+from app.workflows.queue import cancel_queued_run, enqueue_run
 
 router = APIRouter(prefix="/v1/command", tags=["Agent Command Center"])
 DEFAULT_AGENTS = [
@@ -357,3 +357,38 @@ def get_command_run(
             .order_by(AgentDecisionRecord.created_at)
         ).all()
         return serialize_run(run, decisions)
+
+
+@router.post("/runs/{run_id}/cancel")
+def cancel_command_run(
+    run_id: uuid.UUID,
+    context: OrganizationContext = Depends(require_organization_context),
+) -> dict[str, Any]:
+    with SessionLocal() as database:
+        run = database.get(AgentRun, run_id)
+
+        if run is None or run.organization_id != context.organization_id:
+            raise HTTPException(404, "Agent run was not found.")
+
+        if run.status != "queued":
+            raise HTTPException(409, "Only queued runs can be cancelled.")
+
+        try:
+            removed = cancel_queued_run(run.id)
+        except RuntimeError as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+        if not removed:
+            raise HTTPException(
+                409,
+                "The run was already claimed by a worker.",
+            )
+
+        run.status = "cancelled"
+        run.completed_at = datetime.now(UTC)
+        database.commit()
+
+        return {
+            "run_id": str(run.id),
+            "status": "cancelled",
+        }

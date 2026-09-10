@@ -6,7 +6,7 @@ import { AlertTriangle, Bot, CheckCircle2, Clock3, LoaderCircle, Send, Sparkles 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 type Recommendation = { title: string; rationale: string; expected_impact: string; risk: string; confidence: number; measurement: string };
-type Run = { run_id: string; status: "queued" | "running" | "completed" | "failed"; mode: string; elapsed_seconds?: number; error_message?: string | null; result?: { executive_summary: string; diagnosis: string[]; recommendations: Recommendation[] } | null };
+type Run = { run_id: string; status: "queued" | "running" | "completed" | "failed" | "cancelled"; mode: string; elapsed_seconds?: number; error_message?: string | null; result?: { executive_summary: string; diagnosis: string[]; recommendations: Recommendation[] } | null };
 
 function duration(seconds = 0) { return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`; }
 
