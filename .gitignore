@@ -15,3 +15,8 @@ build/
 .vscode/
 dashboard/.env.local
 dashboard-brand-backup-*/
+.env.*
+!.env.example
+node_modules/
+.next/
+*.log
