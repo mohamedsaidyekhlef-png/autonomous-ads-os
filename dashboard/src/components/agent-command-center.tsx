@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import {
   AlertTriangle,
   Bot,
@@ -47,8 +47,7 @@ export function AgentCommandCenter() {
   const [response, setResponse] = useState<CommandResponse | null>(null);
   const [error, setError] = useState("");
 
-  async function submitCommand(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitCommand() {
 
     if (command.trim().length < 5) {
       setError("Describe what you want the AI Ads Team to accomplish.");
@@ -123,7 +122,7 @@ export function AgentCommandCenter() {
           </div>
         </div>
 
-        <form onSubmit={submitCommand} className="mt-5">
+        <div className="mt-5">
           <div className="rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm focus-within:border-[#1468F3]/50 focus-within:ring-4 focus-within:ring-[#1468F3]/10">
             <textarea
               value={command}
@@ -145,7 +144,8 @@ export function AgentCommandCenter() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={submitCommand}
                 disabled={running}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#FF6500] px-5 py-3 text-sm font-black text-white transition hover:bg-[#E85B00] disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -158,7 +158,7 @@ export function AgentCommandCenter() {
               </button>
             </div>
           </div>
-        </form>
+        </div>
       </div>
 
       {error && (
