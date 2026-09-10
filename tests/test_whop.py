@@ -20,7 +20,7 @@ def test_whop_event_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
     }
     assert whop.process_whop_event("event_1", "membership.activated", event)
     assert not whop.process_whop_event("event_1", "membership.activated", event)
-    assert whop.process_whop_event("event_2", "membership.cancelled", event)
+    assert whop.process_whop_event("event_2", "membership.deactivated", event)
     with session_local() as session:
         membership = session.query(Membership).one()
         assert membership.status == "cancelled"

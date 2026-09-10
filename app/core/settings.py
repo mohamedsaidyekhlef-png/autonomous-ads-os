@@ -1,6 +1,6 @@
 from functools import lru_cache
-from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,7 +8,14 @@ class Settings(BaseSettings):
     app_name: str = "Autonomous Ads OS"
     app_env: str = "development"
     log_level: str = "INFO"
-    dry_run: Literal[True] = True
+    dry_run: bool = True
+
+    @field_validator("dry_run")
+    @classmethod
+    def enforce_shadow_mode(cls, value: bool) -> bool:
+        if value is not True:
+            raise ValueError("DRY_RUN must remain true in Shadow Beta.")
+        return value
 
     # Secrets are injected by the deployment environment. Local .env files are
     # intentionally never loaded by the application.
@@ -32,6 +39,7 @@ class Settings(BaseSettings):
     whop_product_id: str | None = None
     whop_webhook_secret: str | None = None
     whop_required_product_id: str | None = None
+    development_auth_bypass: bool = True
 
     google_ads_developer_token: str | None = None
     google_ads_manager_customer_id: str | None = None
@@ -46,7 +54,12 @@ class Settings(BaseSettings):
     tiktok_app_secret: str | None = None
     tiktok_redirect_uri: str = "http://localhost:8080/oauth/tiktok/callback"
 
-    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 @lru_cache
