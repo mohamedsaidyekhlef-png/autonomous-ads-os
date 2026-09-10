@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import {
@@ -37,6 +38,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { OrganizationData } from "./organization-data";
 
 function PageHeader({
   eyebrow,
@@ -259,7 +261,7 @@ function CampaignsPage() {
     ["Active campaigns", "0", Megaphone],
     ["Spend today", "$0", WalletCards],
     ["Revenue today", "$0", CircleDollarSign],
-    ["Blended ROAS", "—", TrendingUp],
+    ["Blended ROAS", "â€”", TrendingUp],
   ] as const;
 
   return (
@@ -614,7 +616,7 @@ function CreativePage() {
           <h2 className="mt-5 text-xl font-bold">Creative memory</h2>
           <p className="mt-3 text-sm leading-7 text-blue-100/70">
             The system will learn at the level of hooks, problems, promises,
-            proof, objections, offers and visual styles—not just filenames.
+            proof, objections, offers and visual stylesâ€”not just filenames.
           </p>
         </article>
       </section>
@@ -913,23 +915,23 @@ export function SectionRouter({ section }: { section: string }) {
     case "connections":
       return <ConnectionsPage />;
     case "campaigns":
-      return <CampaignsPage />;
+      return <OrganizationData resource="campaigns" />;
     case "agents":
       return <AgentsPage />;
     case "decisions":
-      return <DecisionsPage />;
+      return <OrganizationData resource="decisions" />;
     case "experiments":
-      return <ExperimentsPage />;
+      return <OrganizationData resource="experiments" />;
     case "creative":
-      return <CreativePage />;
+      return <OrganizationData resource="creative" />;
     case "reports":
-      return <ReportsPage />;
+      return <OrganizationData resource="reports" />;
     case "notifications":
       return <NotificationsPage />;
     case "billing":
       return <BillingPage />;
     case "settings":
-      return <SettingsPage />;
+      return <OrganizationData resource="settings" />;
     default:
       return null;
   }

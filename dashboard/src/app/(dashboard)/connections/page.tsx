@@ -70,7 +70,7 @@ const integrations: Integration[] = [
     icon: SiMeta,
     color: "#0866FF",
     authorization: "Meta Business OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "tiktok-ads",
@@ -81,7 +81,7 @@ const integrations: Integration[] = [
     icon: SiTiktok,
     color: "#000000",
     authorization: "TikTok Business OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "search-console",
@@ -92,7 +92,7 @@ const integrations: Integration[] = [
     icon: SiGooglesearchconsole,
     color: "#458CF5",
     authorization: "Google OAuth 2.0",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "google-analytics",
@@ -103,7 +103,7 @@ const integrations: Integration[] = [
     icon: SiGoogleanalytics,
     color: "#E37400",
     authorization: "Google OAuth 2.0",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "shopify",
@@ -114,7 +114,7 @@ const integrations: Integration[] = [
     icon: SiShopify,
     color: "#7AB55C",
     authorization: "Shopify OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "woocommerce",
@@ -125,7 +125,7 @@ const integrations: Integration[] = [
     icon: SiWoocommerce,
     color: "#96588A",
     authorization: "WooCommerce REST API",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "stripe",
@@ -136,7 +136,7 @@ const integrations: Integration[] = [
     icon: SiStripe,
     color: "#635BFF",
     authorization: "Stripe OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "hubspot",
@@ -147,7 +147,7 @@ const integrations: Integration[] = [
     icon: SiHubspot,
     color: "#FF7A59",
     authorization: "HubSpot OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "salesforce",
@@ -169,7 +169,7 @@ const integrations: Integration[] = [
     icon: FaSlack,
     color: "#4A154B",
     authorization: "Slack OAuth",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "telegram",
@@ -180,7 +180,7 @@ const integrations: Integration[] = [
     icon: SiTelegram,
     color: "#26A5E4",
     authorization: "Telegram Bot",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "whatsapp",
@@ -191,7 +191,7 @@ const integrations: Integration[] = [
     icon: SiWhatsapp,
     color: "#25D366",
     authorization: "WhatsApp Cloud API",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "zapier",
@@ -448,13 +448,13 @@ export default function ConnectionsPage() {
               ))}
             </div>
 
-            <button className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] px-5 py-3.5 font-bold text-white transition hover:bg-[#E85B00]">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/oauth/google/start`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] px-5 py-3.5 font-bold text-white transition hover:bg-[#E85B00]">
               Continue to {selected.name}
               <ExternalLink size={17} />
-            </button>
+            </a>
 
             <p className="mt-4 text-center text-xs text-amber-700">
-              OAuth backend configuration is the next implementation step.
+              Only Google Ads OAuth is available in Shadow Beta. All unsupported integrations are marked Coming soon.
             </p>
           </article>
         </div>

@@ -12,6 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api.automation import router as automation_router
 from app.api.command_center import router as command_center_router
 from app.api.oauth import router as oauth_router
+from app.api.organization import router as organization_router
+from app.api.whop import router as whop_router
 from app.core.settings import get_settings
 from app.database.session import SessionLocal
 
@@ -26,8 +28,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -133,3 +134,5 @@ app.include_router(automation_router)
 app.include_router(oauth_router)
 
 app.include_router(command_center_router)
+app.include_router(organization_router)
+app.include_router(whop_router)

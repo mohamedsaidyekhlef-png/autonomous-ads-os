@@ -4,7 +4,9 @@ from app.database.models.operations import (
     CampaignRecord,
     CreativeAssetRecord,
     ExperimentRecord,
+    OrganizationSettingRecord,
     ReportRecord,
+    WebhookEventRecord,
 )
 from app.database.models.saas import (
     AdvertisingAccount,
@@ -25,7 +27,9 @@ __all__ = [
     "Membership",
     "OAuthCredential",
     "Organization",
+    "OrganizationSettingRecord",
     "PlatformConnection",
     "ReportRecord",
     "User",
+    "WebhookEventRecord",
 ]

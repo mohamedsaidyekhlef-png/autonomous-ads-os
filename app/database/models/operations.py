@@ -38,7 +38,15 @@ class OperationalTimestampMixin:
 
 class AgentRun(Base, OperationalTimestampMixin):
     __tablename__ = "agent_runs"
-    __table_args__ = (Index("ix_agent_runs_org_status", "organization_id", "status"),)
+    __table_args__ = (
+        Index("ix_agent_runs_org_status", "organization_id", "status"),
+        Index(
+            "ix_agent_runs_org_idempotency",
+            "organization_id",
+            "idempotency_key",
+            unique=True,
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
@@ -72,6 +80,11 @@ class AgentRun(Base, OperationalTimestampMixin):
         default=list,
         nullable=False,
     )
+    request_data: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
+    result_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     result_summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
@@ -345,4 +358,36 @@ class ReportRecord(Base, OperationalTimestampMixin):
         DateTime(timezone=True),
         default=utc_now,
         nullable=False,
+    )
+
+
+class OrganizationSettingRecord(Base, OperationalTimestampMixin):
+    __tablename__ = "organization_settings"
+    __table_args__ = (
+        Index(
+            "ix_organization_settings_org_key", "organization_id", "key", unique=True
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    key: Mapped[str] = mapped_column(String(100), nullable=False)
+    value: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+
+class WebhookEventRecord(Base, OperationalTimestampMixin):
+    __tablename__ = "webhook_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    provider: Mapped[str] = mapped_column(String(30), nullable=False)
+    event_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    processed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )

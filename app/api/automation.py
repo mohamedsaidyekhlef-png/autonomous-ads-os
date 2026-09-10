@@ -17,7 +17,7 @@ router = APIRouter(prefix="/v1/automation", tags=["automation"])
 class StartAutomationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    mode: Literal["shadow", "live"] = "shadow"
+    mode: Literal["shadow"] = "shadow"
 
 
 @router.post("/start")
@@ -42,20 +42,6 @@ def start_automation(request: StartAutomationRequest) -> JSONResponse:
                 "status": "failed",
                 "message": "The database readiness check failed.",
                 "error_type": type(exc).__name__,
-            },
-        )
-
-    if request.mode == "live" and settings.dry_run:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "status": "blocked",
-                "reason": "dry_run_enabled",
-                "message": (
-                    "Live execution is disabled. The application is currently "
-                    "in capital-protection dry-run mode."
-                ),
-                "next_step": "Use shadow mode until OAuth and policy validation pass.",
             },
         )
 

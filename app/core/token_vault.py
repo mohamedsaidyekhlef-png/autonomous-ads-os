@@ -10,22 +10,24 @@ class TokenVaultError(RuntimeError):
 class TokenVault:
     def __init__(self) -> None:
         settings = get_settings()
-
         try:
             self._fernet = Fernet(settings.token_encryption_key.encode("utf-8"))
         except (TypeError, ValueError) as exc:
-            raise TokenVaultError("TOKEN_ENCRYPTION_KEY is invalid.") from exc
+            # A deterministic non-production key supports local shadow-only
+            # development; production must always inject a valid secret.
+            if settings.app_env == "development":
+                self._fernet = Fernet(b"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
+            else:
+                raise TokenVaultError("TOKEN_ENCRYPTION_KEY is invalid.") from exc
 
     def encrypt(self, plaintext: str) -> str:
         if not plaintext:
             raise TokenVaultError("Cannot encrypt an empty token.")
-
         return self._fernet.encrypt(plaintext.encode("utf-8")).decode("utf-8")
 
     def decrypt(self, ciphertext: str) -> str:
         if not ciphertext:
             raise TokenVaultError("Cannot decrypt an empty token.")
-
         try:
             return self._fernet.decrypt(ciphertext.encode("utf-8")).decode("utf-8")
         except InvalidToken as exc:

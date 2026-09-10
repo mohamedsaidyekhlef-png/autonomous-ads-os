@@ -1,16 +1,15 @@
-import json
+# ruff: noqa: B008
+import asyncio
 import uuid
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select, update
 
 from app.agents.registry import get_agent_profile
-from app.core.settings import get_settings
+from app.core.auth import OrganizationContext, require_organization_context
 from app.database.models import (
     AgentDecisionRecord,
     AgentRun,
@@ -18,55 +17,17 @@ from app.database.models import (
     Organization,
 )
 from app.database.session import SessionLocal
+from app.llm.client import structured_completion
+from app.workflows.queue import enqueue_run
 
 router = APIRouter(prefix="/v1/command", tags=["Agent Command Center"])
-
 DEFAULT_AGENTS = [
     "chief_strategy",
     "measurement_auditor",
     "budget_controller",
     "risk_controller",
 ]
-
-SYSTEM_PROMPT = """
-You are the Chief Strategy Brain of Autonomous Ads OS.
-
-You coordinate a senior advertising team responsible for strategy,
-measurement, budgeting, experimentation, creative direction, compliance,
-risk protection and platform-specific execution.
-
-OPERATING PRINCIPLES
-
-1. Never invent performance data, conversion data, product facts or customer
-   facts.
-2. Distinguish verified evidence from assumptions.
-3. Never claim that a platform mutation occurred unless an execution adapter
-   returned a verified result.
-4. The current environment is shadow mode. You may analyze, diagnose, create
-   drafts and recommend actions, but you must not claim to have spent money.
-5. Protect capital. Recommend reversible actions and explicit stop-loss rules.
-6. Do not optimize clicks when the stated objective is profit, revenue,
-   purchases, qualified leads or customer lifetime value.
-7. If tracking data is missing, say so and reduce confidence.
-8. Every recommendation needs rationale, expected impact, risk and confidence.
-9. Do not recommend scaling without reliable conversion evidence.
-10. Return only JSON matching the supplied schema.
-
-DECISION PROCESS
-
-- Interpret the customer's command.
-- Review verified business and campaign context.
-- Identify missing information.
-- Diagnose the current situation.
-- Generate multiple reasonable actions.
-- Reject actions that violate budget, measurement or evidence constraints.
-- Select the safest high-value actions.
-- Define how each action should be measured.
-- Set an appropriate next review interval.
-
-You are not a generic assistant. You are an evidence-driven advertising
-operations team working under deterministic policy controls.
-""".strip()
+SYSTEM_PROMPT = """You are the Chief Strategy Brain of Autonomous Ads OS. Return only JSON matching the supplied schema. This is mandatory shadow mode: analyze and create drafts only. Never claim platform actions or ad spend occurred. Mark assumptions and missing evidence clearly; recommend reversible actions and stop-losses."""
 
 
 class StrictModel(BaseModel):
@@ -107,67 +68,25 @@ class CommandResult(StrictModel):
     assumptions: list[str]
     missing_information: list[str]
     diagnosis: list[str]
-    recommendations: list[Recommendation] = Field(
-        min_length=1,
-        max_length=8,
-    )
+    recommendations: list[Recommendation] = Field(min_length=1, max_length=8)
     warnings: list[str]
     next_review_minutes: int = Field(ge=15, le=10080)
 
 
-def development_organization() -> Organization:
-    settings = get_settings()
-
-    if settings.app_env != "development":
-        raise HTTPException(
-            status_code=401,
-            detail="Authenticated organization context is required.",
-        )
-
-    with SessionLocal() as database:
-        organization = database.scalars(
-            select(Organization)
-            .where(Organization.status == "active")
-            .order_by(Organization.created_at)
-            .limit(1)
-        ).first()
-
-        if organization is None:
-            raise HTTPException(
-                status_code=409,
-                detail="No active organization exists.",
-            )
-
-        database.expunge(organization)
-        return organization
-
-
 def validate_agents(agent_ids: list[str]) -> list[dict[str, Any]]:
     if not agent_ids:
-        raise HTTPException(
-            status_code=422,
-            detail="Select at least one agent.",
-        )
-
-    profiles: list[dict[str, Any]] = []
-
+        raise HTTPException(422, "Select at least one agent.")
+    profiles = []
     for agent_id in dict.fromkeys(agent_ids):
         try:
-            profile = get_agent_profile(agent_id)
+            profiles.append(get_agent_profile(agent_id).model_dump(mode="json"))
         except KeyError as exc:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unknown agent: {agent_id}",
-            ) from exc
-
-        profiles.append(profile.model_dump(mode="json"))
-
+            raise HTTPException(422, f"Unknown agent: {agent_id}") from exc
     return profiles
 
 
 def command_context(
-    organization: Organization,
-    profiles: list[dict[str, Any]],
+    organization: Organization, profiles: list[dict[str, Any]]
 ) -> dict[str, Any]:
     with SessionLocal() as database:
         campaigns = database.scalars(
@@ -176,30 +95,29 @@ def command_context(
             .order_by(CampaignRecord.updated_at.desc())
             .limit(25)
         ).all()
-
         return {
             "organization": {
                 "id": str(organization.id),
                 "name": organization.name,
                 "currency": organization.currency,
                 "risk_profile": organization.risk_profile,
-                "daily_spend_cap_minor": (organization.daily_spend_cap_minor),
-                "monthly_spend_cap_minor": (organization.monthly_spend_cap_minor),
-                "automation_enabled": organization.automation_enabled,
+                "daily_spend_cap_minor": organization.daily_spend_cap_minor,
+                "monthly_spend_cap_minor": organization.monthly_spend_cap_minor,
+                "automation_enabled": False,
             },
             "agents": profiles,
             "campaigns": [
                 {
-                    "id": str(campaign.id),
-                    "name": campaign.name,
-                    "platform": campaign.platform,
-                    "status": campaign.status,
-                    "objective": campaign.objective,
-                    "daily_budget_minor": campaign.daily_budget_minor,
-                    "currency": campaign.currency,
-                    "metrics": campaign.metrics,
+                    "id": str(c.id),
+                    "name": c.name,
+                    "platform": c.platform,
+                    "status": c.status,
+                    "objective": c.objective,
+                    "daily_budget_minor": c.daily_budget_minor,
+                    "currency": c.currency,
+                    "metrics": c.metrics,
                 }
-                for campaign in campaigns
+                for c in campaigns
             ],
             "data_quality": {
                 "source": "local_database",
@@ -210,128 +128,97 @@ def command_context(
         }
 
 
-async def run_qwen(
-    command: str,
-    context: dict[str, Any],
-) -> CommandResult:
-    settings = get_settings()
+async def run_llm(command: str, context: dict[str, Any]) -> CommandResult:
+    content = await structured_completion(
+        SYSTEM_PROMPT, command, context, CommandResult.model_json_schema()
+    )
+    return CommandResult.model_validate_json(content)
 
-    payload = {
-        "model": settings.ollama_model,
-        "stream": False,
-        "think": False,
-        "format": CommandResult.model_json_schema(),
-        "options": {
-            "temperature": 0.1,
-        },
-        "messages": [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": json.dumps(
-                    {
-                        "customer_command": command,
-                        "verified_context": context,
-                        "required_behavior": {
-                            "mode": "shadow",
-                            "do_not_invent_metrics": True,
-                            "do_not_claim_execution": True,
-                        },
-                    },
-                    ensure_ascii=False,
-                ),
-            },
-        ],
+
+def serialize_run(
+    run: AgentRun, decisions: list[AgentDecisionRecord] | None = None
+) -> dict[str, Any]:
+    now = datetime.now(UTC)
+    end = run.completed_at or now
+    elapsed = max(0, int((end - run.created_at).total_seconds()))
+    payload: dict[str, Any] = {
+        "id": str(run.id),
+        "run_id": str(run.id),
+        "status": run.status,
+        "mode": run.mode,
+        "objective": run.objective,
+        "selected_agents": run.selected_agents,
+        "result_summary": run.result_summary,
+        "result": run.result_data,
+        "error_message": run.error_message,
+        "created_at": run.created_at.isoformat(),
+        "started_at": run.started_at.isoformat() if run.started_at else None,
+        "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+        "elapsed_seconds": elapsed,
     }
+    if decisions is not None:
+        payload["decisions"] = [
+            {
+                "id": str(d.id),
+                "agent_id": d.agent_id,
+                "status": d.status,
+                "rationale": d.rationale,
+                "confidence": d.confidence,
+                "risk": d.risk,
+                "evidence": d.evidence,
+                "proposed_actions": d.proposed_actions,
+            }
+            for d in decisions
+        ]
+    return payload
 
+
+def process_run(run_id: uuid.UUID) -> None:
+    """Worker entrypoint. Re-delivery is safe: only a queued run can start."""
+    with SessionLocal() as database:
+        claimed = database.execute(
+            update(AgentRun)
+            .where(AgentRun.id == run_id, AgentRun.status == "queued")
+            .values(status="running", started_at=datetime.now(UTC), error_message=None)
+        ).rowcount
+        database.commit()
+        if not claimed:
+            return
+        run = database.get(AgentRun, run_id)
+        if run is None:
+            return
+        organization = database.get(Organization, run.organization_id)
+        if organization is None:
+            _fail_run(run_id, "Organization no longer exists.")
+            return
+        request = CommandRequest.model_validate(run.request_data)
+        profiles = validate_agents(request.selected_agents)
+        context = command_context(organization, profiles)
     try:
-        async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
-            response = await client.post(
-                f"{settings.ollama_base_url.rstrip('/')}/api/chat",
-                json=payload,
-            )
-            response.raise_for_status()
-            response_data = response.json()
-
-        content = response_data["message"]["content"]
-        return CommandResult.model_validate_json(content)
-    except (
-        httpx.HTTPError,
-        KeyError,
-        TypeError,
-        ValueError,
-    ) as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=("Qwen could not produce a valid structured agent decision."),
-        ) from exc
+        result = asyncio.run(run_llm(request.command, context))
+        _persist_result(run_id, result)
+    except Exception as exc:  # noqa: BLE001 - worker must persist any terminal failure
+        _fail_run(
+            run_id,
+            "Structured shadow decision could not be completed: " + str(exc)[:500],
+        )
 
 
-def create_run(
-    organization_id: uuid.UUID,
-    request: CommandRequest,
-) -> AgentRun:
-    try:
-        with SessionLocal() as database:
-            run = AgentRun(
-                organization_id=organization_id,
-                status="running",
-                mode=request.mode,
-                trigger_source="command_center",
-                objective=request.command,
-                selected_agents=request.selected_agents,
-                started_at=datetime.now(UTC),
-            )
-            database.add(run)
-            database.commit()
-            database.refresh(run)
-            database.expunge(run)
-            return run
-    except SQLAlchemyError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not create the agent run.",
-        ) from exc
-
-
-def fail_run(run_id: uuid.UUID, message: str) -> None:
-    try:
-        with SessionLocal() as database:
-            run = database.get(AgentRun, run_id)
-
-            if run is not None:
-                run.status = "failed"
-                run.error_message = message
-                run.completed_at = datetime.now(UTC)
-                database.commit()
-    except SQLAlchemyError:
-        return
-
-
-def persist_result(
-    organization: Organization,
-    run: AgentRun,
-    request: CommandRequest,
-    result: CommandResult,
-) -> list[str]:
-    draft_ids: list[str] = []
-
-    try:
-        with SessionLocal() as database:
-            stored_run = database.get(AgentRun, run.id)
-
-            if stored_run is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Agent run disappeared before completion.",
-                )
-
-            for recommendation in result.recommendations:
-                decision = AgentDecisionRecord(
-                    organization_id=organization.id,
+def _persist_result(run_id: uuid.UUID, result: CommandResult) -> None:
+    with SessionLocal() as database:
+        run = database.get(AgentRun, run_id)
+        if run is None or run.status == "completed":
+            return
+        if run.status != "running":
+            return
+        organization = database.get(Organization, run.organization_id)
+        if organization is None:
+            raise RuntimeError("Organization no longer exists.")
+        request = CommandRequest.model_validate(run.request_data)
+        for recommendation in result.recommendations:
+            database.add(
+                AgentDecisionRecord(
+                    organization_id=run.organization_id,
                     agent_run_id=run.id,
                     agent_id="chief_strategy",
                     status="proposed",
@@ -348,16 +235,14 @@ def persist_result(
                     ],
                     proposed_actions=[recommendation.model_dump(mode="json")],
                 )
-                database.add(decision)
-
-                should_create_draft = (
-                    request.create_campaign_draft
-                    and recommendation.action_type == "create_campaign"
-                )
-
-                if should_create_draft:
-                    campaign = CampaignRecord(
-                        organization_id=organization.id,
+            )
+            if (
+                request.create_campaign_draft
+                and recommendation.action_type == "create_campaign"
+            ):
+                database.add(
+                    CampaignRecord(
+                        organization_id=run.organization_id,
                         platform="local_demo",
                         name=recommendation.title,
                         objective="conversions",
@@ -368,123 +253,107 @@ def persist_result(
                             "source": "agent_command_center",
                             "agent_run_id": str(run.id),
                             "recommendation": recommendation.model_dump(mode="json"),
+                            "shadow_mode": True,
                         },
                         metrics={},
                     )
-                    database.add(campaign)
-                    database.flush()
-                    draft_ids.append(str(campaign.id))
+                )
+        run.status = "completed"
+        run.result_summary = result.executive_summary
+        run.result_data = result.model_dump(mode="json")
+        run.completed_at = datetime.now(UTC)
+        database.commit()
 
-            stored_run.status = "completed"
-            stored_run.result_summary = result.executive_summary
-            stored_run.completed_at = datetime.now(UTC)
+
+def _fail_run(run_id: uuid.UUID, message: str) -> None:
+    with SessionLocal() as database:
+        run = database.get(AgentRun, run_id)
+        if run is not None and run.status not in {"completed", "failed"}:
+            run.status = "failed"
+            run.error_message = message
+            run.completed_at = datetime.now(UTC)
             database.commit()
 
-        return draft_ids
-    except SQLAlchemyError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Agent result could not be persisted.",
-        ) from exc
 
-
-@router.post("/runs", status_code=201)
-async def create_command_run(
+@router.post("/runs", status_code=202)
+def create_command_run(
     request: CommandRequest,
+    response: Response,
+    context: OrganizationContext = Depends(require_organization_context),
+    idempotency_key: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    organization = development_organization()
-    profiles = validate_agents(request.selected_agents)
-    context = command_context(organization, profiles)
-    run = create_run(organization.id, request)
-
-    try:
-        result = await run_qwen(request.command, context)
-        draft_ids = persist_result(
-            organization,
-            run,
-            request,
-            result,
+    validate_agents(request.selected_agents)
+    with SessionLocal() as database:
+        if idempotency_key:
+            existing = database.scalars(
+                select(AgentRun).where(
+                    AgentRun.organization_id == context.organization_id,
+                    AgentRun.idempotency_key == idempotency_key,
+                )
+            ).first()
+            if existing:
+                response.headers["Location"] = f"/v1/command/runs/{existing.id}"
+                return {
+                    "run_id": str(existing.id),
+                    "status": existing.status,
+                    "mode": "shadow",
+                    "status_url": f"/v1/command/runs/{existing.id}",
+                    "idempotent": True,
+                }
+        run = AgentRun(
+            organization_id=context.organization_id,
+            status="queued",
+            mode="shadow",
+            trigger_source="command_center",
+            objective=request.command,
+            selected_agents=request.selected_agents,
+            request_data=request.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
         )
-    except HTTPException as exc:
-        fail_run(run.id, str(exc.detail))
-        raise
-
+        database.add(run)
+        database.commit()
+        database.refresh(run)
+        run_id = run.id
+    try:
+        enqueue_run(run_id)
+    except RuntimeError as exc:
+        _fail_run(run_id, str(exc))
+        raise HTTPException(503, str(exc)) from exc
+    response.headers["Location"] = f"/v1/command/runs/{run_id}"
     return {
-        "run_id": str(run.id),
-        "status": "completed",
-        "mode": request.mode,
-        "result": result.model_dump(mode="json"),
-        "campaign_draft_ids": draft_ids,
+        "run_id": str(run_id),
+        "status": "queued",
+        "mode": "shadow",
+        "status_url": f"/v1/command/runs/{run_id}",
     }
 
 
 @router.get("/runs")
-def list_command_runs() -> list[dict[str, Any]]:
-    organization = development_organization()
-
+def list_command_runs(
+    context: OrganizationContext = Depends(require_organization_context),
+) -> list[dict[str, Any]]:
     with SessionLocal() as database:
         runs = database.scalars(
             select(AgentRun)
-            .where(AgentRun.organization_id == organization.id)
+            .where(AgentRun.organization_id == context.organization_id)
             .order_by(AgentRun.created_at.desc())
             .limit(50)
         ).all()
-
-        return [
-            {
-                "id": str(run.id),
-                "status": run.status,
-                "mode": run.mode,
-                "objective": run.objective,
-                "selected_agents": run.selected_agents,
-                "result_summary": run.result_summary,
-                "error_message": run.error_message,
-                "created_at": run.created_at.isoformat(),
-                "completed_at": (
-                    run.completed_at.isoformat() if run.completed_at else None
-                ),
-            }
-            for run in runs
-        ]
+        return [serialize_run(run) for run in runs]
 
 
 @router.get("/runs/{run_id}")
-def get_command_run(run_id: uuid.UUID) -> dict[str, Any]:
-    organization = development_organization()
-
+def get_command_run(
+    run_id: uuid.UUID,
+    context: OrganizationContext = Depends(require_organization_context),
+) -> dict[str, Any]:
     with SessionLocal() as database:
         run = database.get(AgentRun, run_id)
-
-        if run is None or run.organization_id != organization.id:
-            raise HTTPException(
-                status_code=404,
-                detail="Agent run was not found.",
-            )
-
+        if run is None or run.organization_id != context.organization_id:
+            raise HTTPException(404, "Agent run was not found.")
         decisions = database.scalars(
             select(AgentDecisionRecord)
             .where(AgentDecisionRecord.agent_run_id == run.id)
             .order_by(AgentDecisionRecord.created_at)
         ).all()
-
-        return {
-            "id": str(run.id),
-            "status": run.status,
-            "mode": run.mode,
-            "objective": run.objective,
-            "result_summary": run.result_summary,
-            "error_message": run.error_message,
-            "decisions": [
-                {
-                    "id": str(decision.id),
-                    "agent_id": decision.agent_id,
-                    "status": decision.status,
-                    "rationale": decision.rationale,
-                    "confidence": decision.confidence,
-                    "risk": decision.risk,
-                    "evidence": decision.evidence,
-                    "proposed_actions": decision.proposed_actions,
-                }
-                for decision in decisions
-            ],
-        }
+        return serialize_run(run, decisions)
