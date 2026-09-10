@@ -17,6 +17,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { SiGoogleads, SiMeta, SiTiktok } from "react-icons/si";
+import { AgentCommandCenter } from "@/components/agent-command-center";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -122,6 +123,7 @@ export default function OverviewPage() {
 
   return (
     <main className="space-y-5">
+      <AgentCommandCenter />
       <section className="relative overflow-hidden rounded-[30px] bg-[#1468F3] px-6 py-8 text-white shadow-[0_20px_60px_rgba(20,104,243,0.22)] md:px-10 md:py-10">
         <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/12" />
         <div className="absolute -bottom-28 right-32 h-64 w-64 rounded-full bg-[#FF6500]/30" />

@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.automation import router as automation_router
+from app.api.command_center import router as command_center_router
 from app.api.oauth import router as oauth_router
 from app.core.settings import get_settings
 from app.database.session import SessionLocal
@@ -130,3 +131,5 @@ def readiness() -> JSONResponse:
 app.include_router(automation_router)
 
 app.include_router(oauth_router)
+
+app.include_router(command_center_router)
