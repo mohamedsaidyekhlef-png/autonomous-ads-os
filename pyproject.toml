@@ -20,9 +20,13 @@ dependencies = [
     "python-multipart>=0.0.32",
     "redis>=8.1.0",
     "sqlalchemy>=2.0.52",
+    "standardwebhooks>=1.0.0",
     "structlog>=26.1.0",
     "tenacity>=9.1.4",
     "uvicorn[standard]>=0.52.4",
+    "whop-sdk>=1.1.1",
+    "PyJWT>=2.10.1",
+    "python-dotenv>=1.1.1",
 ]
 
 [project.scripts]
