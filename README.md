@@ -69,7 +69,7 @@
 > [!IMPORTANT]
 > Autonomous Ads OS is a Shadow Beta. It produces protected analysis and local campaign drafts. It does not automatically publish campaigns, mutate advertising accounts, change live budgets, or spend customer money.
 
-<img src="docs/screenshots/overview.png" alt="Autonomous Ads OS overview dashboard" width="100%">
+<img src="docs/screenshots/overview.jpg" alt="Autonomous Ads OS overview dashboard" width="100%">
 
 <a id="why-autonomous-ads-os"></a>
 <h2>Why Autonomous Ads OS?</h2>
@@ -129,7 +129,7 @@ cancelled
 
 The dashboard polls the run endpoint, displays elapsed time and errors, stores the latest run in browser storage, and survives a page refresh.
 
-<img src="docs/screenshots/command-center.png" alt="AI Ads Command Center with completed recommendations" width="100%">
+<img src="docs/screenshots/command-center.jpg" alt="AI Ads Command Center with completed recommendations" width="100%">
 
 <h3>Integration workspace</h3>
 
@@ -137,7 +137,7 @@ The integration workspace distinguishes available integration work from planned 
 
 Google Ads has beta OAuth scaffolding. Unsupported integrations such as Meta Ads and TikTok Ads remain marked as Coming soon.
 
-<img src="docs/screenshots/connections.png" alt="Autonomous Ads OS integration workspace" width="100%">
+<img src="docs/screenshots/connections.jpg" alt="Autonomous Ads OS integration workspace" width="100%">
 
 <a id="how-it-works"></a>
 <h2>How it works</h2>
