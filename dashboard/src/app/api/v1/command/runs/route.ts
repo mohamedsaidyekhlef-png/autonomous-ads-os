@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MODEL = "llama-3.3-70b-versatile";
+const MODEL = "openai/gpt-oss-120b";
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 type CommandRequest = {
@@ -72,7 +72,7 @@ function recommendation(value: unknown, index: number): Recommendation {
 export async function GET() {
   return NextResponse.json({
     status: "ready",
-    version: "groq-live-v2",
+    version: "groq-live-v3",
     provider: "groq",
     model: MODEL,
     mode: "shadow",
