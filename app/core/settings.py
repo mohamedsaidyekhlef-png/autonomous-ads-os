@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_model: str | None = None
     llm_timeout_seconds: float = 300
+
+    groq_api_key: str | None = None
+    groq_model: str = "openai/gpt-oss-120b"
     dashboard_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 

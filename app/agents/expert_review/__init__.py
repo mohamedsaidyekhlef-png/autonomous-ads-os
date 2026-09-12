@@ -3,6 +3,10 @@ from app.agents.expert_review.evidence import (
     validate_campaign_evidence,
 )
 from app.agents.expert_review.graph import build_expert_review_graph
+from app.agents.expert_review.groq_runner import (
+    ExpertModelUnavailable,
+    GroqSpecialistRunner,
+)
 from app.agents.expert_review.schemas import (
     CampaignEvidence,
     ExpertAnalysisReport,
@@ -18,9 +22,12 @@ from app.agents.expert_review.validators import (
 __all__ = [
     "CampaignEvidence",
     "ExpertAnalysisReport",
+    "ExpertModelUnavailable",
+    "GroqSpecialistRunner",
     "HumanReview",
     "MetricDatum",
     "build_expert_review_graph",
+    "build_live_expert_review_graph",
     "calculate_campaign_metrics",
     "report_digest",
     "review_label",

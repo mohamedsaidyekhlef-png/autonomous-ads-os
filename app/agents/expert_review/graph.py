@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any, Literal
 
 from langgraph.graph import END, START, StateGraph
@@ -11,10 +12,8 @@ from app.agents.expert_review.nodes import (
     validate_report_node,
 )
 from app.agents.expert_review.specialists import (
-    budget_controller,
-    campaign_strategist,
-    measurement_auditor,
-    risk_controller,
+    SpecialistRunner,
+    deterministic_specialist_runner,
 )
 from app.agents.expert_review.state import ExpertReviewState
 
@@ -31,10 +30,26 @@ def route_after_report(
     return "review" if state["validation"].passed else "stop"
 
 
+def run_specialist(
+    state: ExpertReviewState,
+    *,
+    agent_id: str,
+    runner: SpecialistRunner,
+) -> dict[str, object]:
+    return runner(state, agent_id)
+
+
 def build_expert_review_graph(
     *,
     checkpointer: Any = None,
+    specialist_runner: SpecialistRunner | None = None,
 ):
+    runner = (
+        specialist_runner
+        if specialist_runner is not None
+        else deterministic_specialist_runner
+    )
+
     workflow = StateGraph(ExpertReviewState)
 
     workflow.add_node(
@@ -45,22 +60,24 @@ def build_expert_review_graph(
         "calculate_metrics",
         calculate_metrics_node,
     )
-    workflow.add_node(
+
+    specialist_ids = (
         "measurement_auditor",
-        measurement_auditor,
-    )
-    workflow.add_node(
         "budget_controller",
-        budget_controller,
-    )
-    workflow.add_node(
-        "campaign_strategist",
-        campaign_strategist,
-    )
-    workflow.add_node(
+        "chief_strategy",
         "risk_controller",
-        risk_controller,
     )
+
+    for specialist_id in specialist_ids:
+        workflow.add_node(
+            specialist_id,
+            partial(
+                run_specialist,
+                agent_id=specialist_id,
+                runner=runner,
+            ),
+        )
+
     workflow.add_node(
         "synthesize_report",
         synthesize_report_node,
@@ -89,27 +106,16 @@ def build_expert_review_graph(
         },
     )
 
-    for specialist in (
-        "measurement_auditor",
-        "budget_controller",
-        "campaign_strategist",
-        "risk_controller",
-    ):
+    for specialist_id in specialist_ids:
         workflow.add_edge(
             "calculate_metrics",
-            specialist,
+            specialist_id,
         )
 
     workflow.add_edge(
-        [
-            "measurement_auditor",
-            "budget_controller",
-            "campaign_strategist",
-            "risk_controller",
-        ],
+        list(specialist_ids),
         "synthesize_report",
     )
-
     workflow.add_edge(
         "synthesize_report",
         "validate_report",
@@ -129,4 +135,18 @@ def build_expert_review_graph(
 
     return workflow.compile(
         checkpointer=checkpointer,
+    )
+
+
+def build_live_expert_review_graph(
+    *,
+    checkpointer: Any,
+):
+    from app.agents.expert_review.groq_runner import (
+        GroqSpecialistRunner,
+    )
+
+    return build_expert_review_graph(
+        checkpointer=checkpointer,
+        specialist_runner=GroqSpecialistRunner(),
     )

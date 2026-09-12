@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Protocol
 
 from app.agents.expert_review.schemas import (
     CampaignEvidence,
@@ -270,6 +271,26 @@ SpecialistNode = Callable[
 SPECIALIST_NODES: dict[str, SpecialistNode] = {
     "measurement_auditor": measurement_auditor,
     "budget_controller": budget_controller,
-    "campaign_strategist": campaign_strategist,
+    "chief_strategy": campaign_strategist,
     "risk_controller": risk_controller,
 }
+
+
+class SpecialistRunner(Protocol):
+    def __call__(
+        self,
+        state: ExpertReviewState,
+        agent_id: str,
+    ) -> dict[str, object]: ...
+
+
+def deterministic_specialist_runner(
+    state: ExpertReviewState,
+    agent_id: str,
+) -> dict[str, object]:
+    try:
+        node = SPECIALIST_NODES[agent_id]
+    except KeyError as exc:
+        raise ValueError(f"Unknown specialist node: {agent_id}") from exc
+
+    return node(state)
