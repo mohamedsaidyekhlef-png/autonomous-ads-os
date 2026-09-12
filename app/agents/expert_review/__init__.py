@@ -2,6 +2,7 @@ from app.agents.expert_review.evidence import (
     calculate_campaign_metrics,
     validate_campaign_evidence,
 )
+from app.agents.expert_review.graph import build_expert_review_graph
 from app.agents.expert_review.schemas import (
     CampaignEvidence,
     ExpertAnalysisReport,
@@ -19,6 +20,7 @@ __all__ = [
     "ExpertAnalysisReport",
     "HumanReview",
     "MetricDatum",
+    "build_expert_review_graph",
     "calculate_campaign_metrics",
     "report_digest",
     "review_label",
