@@ -32,6 +32,7 @@ const navigation: NavigationItem[] = [
   { name: "Overview", href: "/overview", icon: LayoutDashboard },
   { name: "Connections", href: "/connections", icon: Link2 },
   { name: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { name: "Campaign Analysis", href: "/campaign-analysis", icon: BarChart3 },
   { name: "AI Agent Team", href: "/agents", icon: Bot },
   { name: "Decisions", href: "/decisions", icon: Activity },
   { name: "Experiments", href: "/experiments", icon: FlaskConical },
