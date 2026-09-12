@@ -3,10 +3,6 @@ from app.database.models.career import (
     ATSBoardHealthCheck,
     ATSDriftAlert,
 )
-from app.database.models.jobs import (
-    CanonicalJob,
-    JobSourcePosting,
-)
 from app.database.models.operations import (
     AgentDecisionRecord,
     AgentRun,
@@ -34,10 +30,8 @@ __all__ = [
     "AgentDecisionRecord",
     "AgentRun",
     "CampaignRecord",
-    "CanonicalJob",
     "CreativeAssetRecord",
     "ExperimentRecord",
-    "JobSourcePosting",
     "Membership",
     "OAuthCredential",
     "Organization",

@@ -9,7 +9,6 @@ from app.services.ats_coverage import (
     HealthObservation,
     record_health_observation,
 )
-from app.services.canonical_jobs import ingest_board_snapshot
 
 
 @dataclass(frozen=True)
@@ -20,9 +19,6 @@ class RefreshResult:
     schema_hash: str | None
     schema_changed: bool
     adapter_version: str | None
-    persisted_postings: int
-    created_canonical_jobs: int
-    deactivated_postings: int
     error_code: str | None
     error_message: str | None
 
@@ -51,17 +47,11 @@ def refresh_board(
             ),
         )
 
-        ingestion = ingest_board_snapshot(
-            database,
-            board,
-            snapshot,
-        )
-
         board.board_metadata = {
             **board.board_metadata,
             "adapter_version": snapshot.adapter_version,
             "response_bytes": snapshot.response_bytes,
-            "normalized_postings": (ingestion.observed_postings),
+            "normalized_postings": snapshot.posting_count,
         }
 
         database.flush()
@@ -73,9 +63,6 @@ def refresh_board(
             schema_hash=board.schema_hash,
             schema_changed=health.schema_changed,
             adapter_version=snapshot.adapter_version,
-            persisted_postings=ingestion.observed_postings,
-            created_canonical_jobs=(ingestion.created_canonical_jobs),
-            deactivated_postings=(ingestion.deactivated_sources),
             error_code=None,
             error_message=None,
         )
@@ -100,9 +87,6 @@ def refresh_board(
             schema_hash=board.schema_hash,
             schema_changed=False,
             adapter_version=None,
-            persisted_postings=0,
-            created_canonical_jobs=0,
-            deactivated_postings=0,
             error_code=exc.code,
             error_message=str(exc),
         )
