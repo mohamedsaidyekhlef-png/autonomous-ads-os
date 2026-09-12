@@ -10,7 +10,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.automation import router as automation_router
-from app.api.career_coverage import router as career_coverage_router
 from app.api.command_center import router as command_center_router
 from app.api.oauth import router as oauth_router
 from app.api.organization import router as organization_router
@@ -149,7 +148,6 @@ app.include_router(automation_router)
 
 app.include_router(oauth_router)
 
-app.include_router(career_coverage_router)
 app.include_router(command_center_router)
 app.include_router(organization_router)
 app.include_router(whop_router)

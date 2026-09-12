@@ -1,8 +1,3 @@
-from app.database.models.career import (
-    ATSBoard,
-    ATSBoardHealthCheck,
-    ATSDriftAlert,
-)
 from app.database.models.operations import (
     AgentDecisionRecord,
     AgentRun,
@@ -23,9 +18,6 @@ from app.database.models.saas import (
 )
 
 __all__ = [
-    "ATSBoard",
-    "ATSBoardHealthCheck",
-    "ATSDriftAlert",
     "AdvertisingAccount",
     "AgentDecisionRecord",
     "AgentRun",

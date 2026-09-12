@@ -20,4 +20,3 @@ dashboard-brand-backup-*/
 node_modules/
 .next/
 *.log
-/autonomous_ads.db
