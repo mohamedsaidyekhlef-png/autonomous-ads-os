@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +72,7 @@ function recommendation(value: unknown, index: number): Recommendation {
 export async function GET() {
   return NextResponse.json({
     status: "ready",
+    version: "groq-live-v2",
     provider: "groq",
     model: MODEL,
     mode: "shadow",
@@ -127,7 +128,6 @@ export async function POST(request: Request) {
           model: MODEL,
           temperature: 0.35,
           max_completion_tokens: 2200,
-          response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
@@ -178,7 +178,12 @@ export async function POST(request: Request) {
         );
       }
 
-      console.error("Groq request failed", providerResponse.status);
+      const providerError = await providerResponse.text();
+      console.error(
+        "Groq request failed",
+        providerResponse.status,
+        providerError.slice(0, 1000),
+      );
 
       return NextResponse.json(
         { detail: "The AI provider could not complete this analysis." },
