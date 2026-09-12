@@ -11,7 +11,6 @@ const validSections = new Set([
   "creative",
   "reports",
   "notifications",
-  "billing",
   "settings",
 ]);
 

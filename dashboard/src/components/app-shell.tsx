@@ -5,7 +5,6 @@ import {
   BarChart3,
   Bell,
   Bot,
-  CreditCard,
   FlaskConical,
   LayoutDashboard,
   Link2,
@@ -39,7 +38,6 @@ const navigation: NavigationItem[] = [
   { name: "Creative Lab", href: "/creative", icon: Sparkles },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Notifications", href: "/notifications", icon: Bell },
-  { name: "Billing", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -119,8 +117,7 @@ function SidebarContent({
           Capital protection active
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-500">
-          Execution remains in dry-run mode until subscription, account access
-          and spending limits are validated.
+          Execution remains in dry-run mode. Analysis cannot modify live advertising accounts.
         </p>
       </div>
 
@@ -132,7 +129,7 @@ function SidebarContent({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">Development Admin</p>
             <p className="truncate text-xs text-slate-500">
-              Whop subscription pending
+              Protected Shadow workspace
             </p>
           </div>
         </div>
