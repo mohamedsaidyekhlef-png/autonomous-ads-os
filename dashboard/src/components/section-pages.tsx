@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { OrganizationData } from "./organization-data";
+import { CreativeLabWorkspace } from "./workspaces/creative-lab-workspace";
+import { ExperimentsWorkspace } from "./workspaces/experiments-workspace";
 
 function PageHeader({
   eyebrow,
@@ -639,7 +641,11 @@ function ReportsPage() {
         {[
           ["Daily brief", "Yesterday's performance and actions", Clock3],
           ["Weekly strategy", "Trends, tests and budget changes", TrendingUp],
-          ["Monthly executive", "Profitability and strategic conclusions", BarChart3],
+          [
+            "Monthly executive",
+            "Profitability and strategic conclusions",
+            BarChart3,
+          ],
         ].map(([name, description, RawIcon]) => {
           const Icon = RawIcon as LucideIcon;
 
@@ -921,9 +927,9 @@ export function SectionRouter({ section }: { section: string }) {
     case "decisions":
       return <OrganizationData resource="decisions" />;
     case "experiments":
-      return <OrganizationData resource="experiments" />;
+      return <ExperimentsWorkspace />;
     case "creative":
-      return <OrganizationData resource="creative" />;
+      return <CreativeLabWorkspace />;
     case "reports":
       return <OrganizationData resource="reports" />;
     case "notifications":
