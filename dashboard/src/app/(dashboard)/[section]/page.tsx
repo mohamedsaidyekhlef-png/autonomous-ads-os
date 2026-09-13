@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 
 import { SectionRouter } from "@/components/section-pages";
 import { CampaignAnalysis } from "@/components/campaign-analysis";
+import { ExpertReviewWorkspace } from "@/components/workspaces/expert-review-workspace";
 
 const validSections = new Set([
   "connections",
   "campaigns",
   "campaign-analysis",
+  "expert-reviews",
   "agents",
   "decisions",
   "experiments",
@@ -29,6 +31,10 @@ export default async function SectionPage({
 
   if (section === "campaign-analysis") {
     return <CampaignAnalysis />;
+  }
+
+  if (section === "expert-reviews") {
+    return <ExpertReviewWorkspace />;
   }
 
   return <SectionRouter section={section} />;

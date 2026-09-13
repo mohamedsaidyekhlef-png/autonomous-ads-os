@@ -6,6 +6,7 @@ import {
   Bell,
   Bot,
   FlaskConical,
+  FileCheck2,
   LayoutDashboard,
   Link2,
   Megaphone,
@@ -33,6 +34,7 @@ const navigation: NavigationItem[] = [
   { name: "Connections", href: "/connections", icon: Link2 },
   { name: "Campaigns", href: "/campaigns", icon: Megaphone },
   { name: "Campaign Analysis", href: "/campaign-analysis", icon: BarChart3 },
+  { name: "Expert Reviews", href: "/expert-reviews", icon: FileCheck2 },
   { name: "AI Agent Team", href: "/agents", icon: Bot },
   { name: "Decisions", href: "/decisions", icon: Activity },
   { name: "Experiments", href: "/experiments", icon: FlaskConical },
@@ -78,8 +80,7 @@ function SidebarContent({
         {navigation.map((item) => {
           const Icon = item.icon;
           const active =
-            pathname === item.href ||
-            pathname.startsWith(`${item.href}/`);
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
@@ -118,7 +119,8 @@ function SidebarContent({
           Capital protection active
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-500">
-          Execution remains in dry-run mode. Analysis cannot modify live advertising accounts.
+          Execution remains in dry-run mode. Analysis cannot modify live
+          advertising accounts.
         </p>
       </div>
 
