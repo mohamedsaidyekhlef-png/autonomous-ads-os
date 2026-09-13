@@ -1,3 +1,7 @@
+from app.database.models.expert_reviews import (
+    ExpertHumanReview,
+    ExpertReviewRun,
+)
 from app.database.models.operations import (
     AgentDecisionRecord,
     AgentRun,
@@ -24,6 +28,8 @@ __all__ = [
     "CampaignRecord",
     "CreativeAssetRecord",
     "ExperimentRecord",
+    "ExpertHumanReview",
+    "ExpertReviewRun",
     "Membership",
     "OAuthCredential",
     "Organization",

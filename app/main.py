@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.automation import router as automation_router
 from app.api.command_center import router as command_center_router
+from app.api.expert_reviews import router as expert_reviews_router
 from app.api.oauth import router as oauth_router
 from app.api.organization import router as organization_router
 from app.api.whop import router as whop_router
@@ -149,5 +150,6 @@ app.include_router(automation_router)
 app.include_router(oauth_router)
 
 app.include_router(command_center_router)
+app.include_router(expert_reviews_router)
 app.include_router(organization_router)
 app.include_router(whop_router)
